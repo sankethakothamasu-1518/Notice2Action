@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Notice2Action — Turn college notices into action</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">N2A</span>
+    <div>
+      <h1>Notice2Action</h1>
+      <p class="tagline">Turn long college notices into a summary, key details and an action checklist</p>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="dashboard">Dashboard</button>
+    <button class="tab" data-view="upload">New notice</button>
+    <button class="tab" data-view="notices">Notices</button>
+    <button class="tab" data-view="deadlines">Deadlines</button>
+    <button class="tab" data-view="checklist">Checklist</button>
+    <button class="tab" data-view="api">API</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <!-- ============================ DASHBOARD ============================ -->
+  <section id="view-dashboard" class="view active">
+    <div class="cards" id="statCards"></div>
+    <div class="grid2">
+      <div class="panel">
+        <h2>Upcoming deadlines</h2>
+        <div id="upcomingDeadlines" class="list"></div>
+      </div>
+      <div class="panel">
+        <h2>Recent notices</h2>
+        <div id="recentNotices" class="list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== UPLOAD ============================= -->
+  <section id="view-upload" class="view">
+    <div class="panel">
+      <h2>Analyse a notice</h2>
+      <p class="muted">Paste the notice text, or upload a PDF, DOCX, TXT or image (PNG/JPG). The NLP pipeline runs on the server the moment you submit.</p>
+      <label class="field">
+        <span>Title <em>(optional — taken from the file name or first line)</em></span>
+        <input id="upTitle" type="text" placeholder="e.g. Hostel Fee Payment Notice" />
+      </label>
+      <label class="field">
+        <span>Notice text</span>
+        <textarea id="upText" rows="10" placeholder="Paste the full notice text here…"></textarea>
+      </label>
+      <div class="row">
+        <label class="field grow">
+          <span>Or upload a file</span>
+          <input id="upFile" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp" />
+        </label>
+        <label class="field">
+          <span>Reference date <em>(for relative dates)</em></span>
+          <input id="upRefDate" type="date" />
+        </label>
+        <label class="field">
+          <span>Uploaded by</span>
+          <select id="upUser"></select>
+        </label>
+      </div>
+      <div class="row">
+        <button id="btnAnalyze" class="primary">Analyse notice</button>
+        <button id="btnPreview" class="ghost">Preview only (don't save)</button>
+        <button id="btnLoadSample" class="ghost">Load a sample notice</button>
+      </div>
+      <div id="uploadStatus" class="status"></div>
+    </div>
+    <div id="previewCard" class="panel hidden">
+      <div class="panel-head">
+        <h2>Preview (not saved)</h2>
+        <button class="ghost small" id="previewClose">Close</button>
+      </div>
+      <div id="previewBody"></div>
+    </div>
+  </section>
+
+  <!-- ============================= NOTICES ============================= -->
+  <section id="view-notices" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>All notices</h2>
+        <div class="row tight">
+          <input id="searchBox" type="search" placeholder="Search title, summary or text…" />
+          <select id="statusFilter">
+            <option value="">Any status</option>
+            <option value="analyzed">Analyzed</option>
+            <option value="failed">Failed</option>
+          </select>
+          <button class="ghost small" id="btnRefreshNotices">Refresh</button>
+        </div>
+      </div>
+      <div id="noticesList" class="list"></div>
+    </div>
+  </section>
+
+  <!-- ============================ DEADLINES ============================ -->
+  <section id="view-deadlines" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Extracted deadlines</h2>
+        <label class="inline"><input type="checkbox" id="onlyUpcoming" /> upcoming only</label>
+      </div>
+      <div id="deadlinesList" class="list"></div>
+    </div>
+  </section>
+
+  <!-- ============================ CHECKLIST ============================ -->
+  <section id="view-checklist" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Action checklist</h2>
+        <div class="row tight">
+          <select id="clFilter">
+            <option value="">All tasks</option>
+            <option value="open">Open</option>
+            <option value="done">Completed</option>
+          </select>
+          <button class="ghost small" id="btnRefreshChecklist">Refresh</button>
+        </div>
+      </div>
+      <div id="progressWrap" class="progress-wrap"></div>
+      <div id="checklistBody" class="list"></div>
+    </div>
+  </section>
+
+  <!-- ================================ API ============================== -->
+  <section id="view-api" class="view">
+    <div class="panel">
+      <h2>REST API reference</h2>
+      <p class="muted">Every screen above is driven by these JSON endpoints.</p>
+      <table class="api">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td>/api/health</td><td>Service + database health, OCR availability</td></tr>
+          <tr><td>GET</td><td>/api/stats</td><td>Dashboard counters</td></tr>
+          <tr><td>GET</td><td>/api/notices?status=&amp;q=&amp;limit=&amp;offset=</td><td>List notices (search + filter)</td></tr>
+          <tr><td>GET</td><td>/api/notices/:id</td><td>Full analysis of one notice</td></tr>
+          <tr><td>POST</td><td>/api/notices</td><td>Create notice — multipart <code>file</code> or JSON <code>{text,title,uploaded_by,ref_date}</code></td></tr>
+          <tr><td>POST</td><td>/api/notices/:id/reanalyze</td><td>Re-run NLP on stored text</td></tr>
+          <tr><td>PATCH</td><td>/api/notices/:id</td><td>Rename a notice</td></tr>
+          <tr><td>DELETE</td><td>/api/notices/:id</td><td>Delete notice + all derived rows</td></tr>
+          <tr><td>GET</td><td>/api/deadlines?upcoming=true</td><td>All deadlines with days-left</td></tr>
+          <tr><td>GET</td><td>/api/checklist?status=open|done&amp;notice_id=</td><td>Checklist items</td></tr>
+          <tr><td>POST</td><td>/api/notices/:id/checklist</td><td>Add a manual task</td></tr>
+          <tr><td>PATCH</td><td>/api/checklist/:id</td><td>Tick / untick / edit a task</td></tr>
+          <tr><td>DELETE</td><td>/api/checklist/:id</td><td>Delete a task</td></tr>
+          <tr><td>POST</td><td>/api/analyze</td><td>Stateless analysis (nothing saved)</td></tr>
+          <tr><td>GET/POST</td><td>/api/users</td><td>List / create users</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
